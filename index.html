@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Running ai</title>
+  <title>RunningAI</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-[#131314] text-[#e3e3e3] h-full flex flex-col font-sans antialiased">
@@ -11,7 +11,7 @@
   <header class="flex items-center justify-between px-6 py-4 border-b border-[#282a2c]/50">
     <div class="flex items-center gap-2">
       <span class="text-xl font-medium tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        RunningAI <span class="text-xs text-zinc-500 font-mono font-normal">Local</span>
+        Gemini <span class="text-xs text-zinc-500 font-mono font-normal">Local</span>
       </span>
     </div>
     <div class="flex items-center gap-2">
@@ -34,17 +34,17 @@
         <p class="text-zinc-500 text-xl font-light">How can I help you today?</p>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-8">
+          <button onclick="useSuggestion('Search for latest news about space exploration')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
+            <p class="text-sm text-zinc-300 group-hover:text-white">Search latest space news</p>
+            <span class="text-xs text-zinc-500 mt-2 block">Web Search</span>
+          </button>
           <button onclick="useSuggestion('Help me write a Python script for web scraping')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
             <p class="text-sm text-zinc-300 group-hover:text-white">Help me write a Python script</p>
             <span class="text-xs text-zinc-500 mt-2 block">Coding</span>
           </button>
-          <button onclick="useSuggestion('Summarize key points about neural networks')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
-            <p class="text-sm text-zinc-300 group-hover:text-white">Summarize neural networks</p>
+          <button onclick="useSuggestion('Summarize how neural networks work')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
+            <p class="text-sm text-zinc-300 group-hover:text-white">Explain neural networks</p>
             <span class="text-xs text-zinc-500 mt-2 block">Learning</span>
-          </button>
-          <button onclick="useSuggestion('Brainstorm 5 creative ideas for a web app')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
-            <p class="text-sm text-zinc-300 group-hover:text-white">Brainstorm web app ideas</p>
-            <span class="text-xs text-zinc-500 mt-2 block">Creativity</span>
           </button>
         </div>
       </div>
@@ -72,7 +72,7 @@
           </button>
         </div>
       </div>
-      <p class="text-center text-xs text-zinc-600 mt-2">Gemini Local may display inaccurate info, so double-check responses.</p>
+      <p class="text-center text-xs text-zinc-600 mt-2">RunningAI may display inaccurate info, so double-check responses.</p>
     </div>
 
   </main>
