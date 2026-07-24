@@ -1,4 +1,33 @@
-// Function to handle Enter key submit (Shift + Enter for new line)
+// Global conversation history for multi-turn chat
+let conversationHistory = [
+  { 
+    role: "system", 
+    content: "You are a helpful local assistant. You have access to a web search tool. If the user asks about real-time facts, news, weather, or current events, call the web_search function." 
+  }
+];
+
+// Tool declaration passed to LM Studio
+const toolsDefinition = [
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Search the web for current events, news, weather, or external information.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The search keywords"
+          }
+        },
+        required: ["query"]
+      }
+    }
+  }
+];
+
+// Key handling
 function handleKeyDown(event) {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
@@ -6,16 +35,40 @@ function handleKeyDown(event) {
   }
 }
 
-// Auto-expand textarea height as you type
+// Auto-adjust textarea height
 function autoResize(textarea) {
   textarea.style.height = "auto";
   textarea.style.height = textarea.scrollHeight + "px";
 }
 
-// Handle Quick Suggestion clicks
+// Quick Suggestion click helper
 function useSuggestion(text) {
   document.getElementById("userInput").value = text;
   sendPrompt();
+}
+
+// Real keyless search fetcher (using public SearXNG API)
+async function executeWebSearch(query) {
+  try {
+    const searchUrl = `https://searx.be/search?q=${encodeURIComponent(query)}&format=json`;
+    const res = await fetch(searchUrl);
+    if (!res.ok) throw new Error("Search network failure");
+    
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) {
+      return "No web results found for this query.";
+    }
+
+    // Extract top 3 results
+    return data.results.slice(0, 3).map(r => ({
+      title: r.title,
+      url: r.url,
+      snippet: r.content || r.snippet
+    }));
+  } catch (err) {
+    console.error("Search Tool Error:", err);
+    return "Failed to execute web search.";
+  }
 }
 
 async function sendPrompt() {
@@ -26,44 +79,82 @@ async function sendPrompt() {
   const welcomeHeader = document.getElementById("welcome-header");
   const messagesContainer = document.getElementById("messages");
 
-  // Hide welcome graphic on first prompt
   welcomeHeader.classList.add("hidden");
   messagesContainer.classList.remove("hidden");
 
-  // Append User Message
+  // Display User Message
   appendMessage("user", prompt);
-  
-  // Clear input
+  conversationHistory.push({ role: "user", content: prompt });
+
   inputEl.value = "";
   inputEl.style.height = "auto";
 
-  // Create loading element for assistant
-  const loadingId = appendMessage("assistant", "Thinking...");
+  // Initial Thinking State
+  const assistantMsgId = appendMessage("assistant", "Thinking...");
 
   try {
-    const response = await fetch("http://localhost:1234/v1/chat/completions", {
+    // First Call to LM Studio
+    let response = await fetch("http://localhost:1234/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "local-model",
-        messages: [
-          { role: "system", content: "You are a helpful, clear, and modern AI assistant." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.7
+        messages: conversationHistory,
+        tools: toolsDefinition,
+        tool_choice: "auto",
+        temperature: 0.3
       })
     });
 
-    if (!response.ok) throw new Error("LM Studio offline");
+    if (!response.ok) throw new Error("Could not connect to LM Studio");
 
-    const data = await response.json();
-    const reply = data.choices[0].message.content;
+    let data = await response.json();
+    let choice = data.choices[0].message;
 
-    // Update thinking bubble with actual response
-    updateMessage(loadingId, reply);
+    // CHECK IF MODEL DECIDED TO CALL SEARCH TOOL
+    if (choice.tool_calls && choice.tool_calls.length > 0) {
+      const toolCall = choice.tool_calls[0];
+      const searchArgs = JSON.parse(toolCall.function.arguments);
+
+      updateMessage(assistantMsgId, `🔍 Searching the web for: "${searchArgs.query}"...`);
+
+      // 1. Run actual search
+      const searchResults = await executeWebSearch(searchArgs.query);
+
+      // 2. Append Tool interactions to history
+      conversationHistory.push(choice); // Push assistant's tool execution request
+      conversationHistory.push({
+        role: "tool",
+        tool_call_id: toolCall.id,
+        content: JSON.stringify(searchResults)
+      });
+
+      // 3. Re-call LM Studio with the search results
+      response = await fetch("http://localhost:1234/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "local-model",
+          messages: conversationHistory,
+          temperature: 0.3
+        })
+      });
+
+      data = await response.json();
+      choice = data.choices[0].message;
+    }
+
+    // Save final response and update UI
+    conversationHistory.push({ role: "assistant", content: choice.content });
+    updateMessage(assistantMsgId, choice.content);
 
   } catch (error) {
-    updateMessage(loadingId, "Error: Could not connect to LM Studio. Make sure local server is running on port 1234 with CORS enabled.", true);
+    console.error(error);
+    updateMessage(
+      assistantMsgId, 
+      "Error: Unable to complete request.\n\nVerify:\n1. LM Studio Server is running at http://localhost:1234\n2. CORS is enabled under LM Studio Server Settings", 
+      true
+    );
   }
 }
 
