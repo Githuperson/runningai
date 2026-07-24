@@ -43,3 +43,4 @@ async function sendPrompt() {
     outputDiv.innerText = "Error: Could not connect to LM Studio.\n\nMake sure:\n1. LM Studio local server is turned ON (port 1234).\n2. CORS is enabled in LM Studio server settings.";
   }
 }
+// bruh
