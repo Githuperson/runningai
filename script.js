@@ -117,7 +117,7 @@ async function sendPrompt() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "llama-3.2-3b-instruct",
+        model: "nvidia/nemotron-3-nano-4b",
         messages: conversationHistory,
         tools: toolsDefinition,
         tool_choice: "auto",
@@ -153,7 +153,7 @@ async function sendPrompt() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.2-3b-instruct",
+          model: "nvidia/nemotron-3-nano-4b",
           messages: conversationHistory,
           temperature: 0.3
         })
