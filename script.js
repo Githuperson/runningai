@@ -2,17 +2,17 @@
 let conversationHistory = [
   { 
     role: "system", 
-    content: "You are a helpful local assistant. You have access to a web search tool. If the user asks about real-time facts, news, weather, or current events, call the web_search function." 
+    content: "You are a helpful local assistant running via RunningAI. You have access to a web search tool powered by DuckDuckGo. If the user asks about real-time facts, news, weather, or current events, call the web_search function." 
   }
 ];
 
-// Tool declaration passed to LM Studio
+// Tool declaration passed to the local model
 const toolsDefinition = [
   {
     type: "function",
     function: {
       name: "web_search",
-      description: "Search the web for current events, news, weather, or external information.",
+      description: "Search DuckDuckGo for current events, news, weather, or external information.",
       parameters: {
         type: "object",
         properties: {
@@ -27,7 +27,7 @@ const toolsDefinition = [
   }
 ];
 
-// Key handling
+// Key handling for text input
 function handleKeyDown(event) {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
@@ -35,39 +35,58 @@ function handleKeyDown(event) {
   }
 }
 
-// Auto-adjust textarea height
+// Auto-adjust textarea height dynamically
 function autoResize(textarea) {
   textarea.style.height = "auto";
   textarea.style.height = textarea.scrollHeight + "px";
 }
 
-// Quick Suggestion click helper
+// Quick Suggestion card click handler
 function useSuggestion(text) {
   document.getElementById("userInput").value = text;
   sendPrompt();
 }
 
-// Real keyless search fetcher (using public SearXNG API)
+// DuckDuckGo Search Execution Function
 async function executeWebSearch(query) {
   try {
-    const searchUrl = `https://searx.be/search?q=${encodeURIComponent(query)}&format=json`;
+    const searchUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
     const res = await fetch(searchUrl);
-    if (!res.ok) throw new Error("Search network failure");
+    if (!res.ok) throw new Error("DuckDuckGo search request failed");
     
     const data = await res.json();
-    if (!data.results || data.results.length === 0) {
-      return "No web results found for this query.";
+    const results = [];
+
+    // 1. Capture Direct Abstract / Instant Answer
+    if (data.AbstractText) {
+      results.push({
+        title: data.Heading || "Instant Answer",
+        url: data.AbstractURL || "https://duckduckgo.com",
+        snippet: data.AbstractText
+      });
     }
 
-    // Extract top 3 results
-    return data.results.slice(0, 3).map(r => ({
-      title: r.title,
-      url: r.url,
-      snippet: r.content || r.snippet
-    }));
+    // 2. Capture Related Topics
+    if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+      data.RelatedTopics.slice(0, 3).forEach(topic => {
+        if (topic.Text && topic.FirstURL) {
+          results.push({
+            title: topic.Text.split(' - ')[0] || "Related Result",
+            url: topic.FirstURL,
+            snippet: topic.Text
+          });
+        }
+      });
+    }
+
+    if (results.length === 0) {
+      return "No instant results found on DuckDuckGo for this query.";
+    }
+
+    return results;
   } catch (err) {
-    console.error("Search Tool Error:", err);
-    return "Failed to execute web search.";
+    console.error("DuckDuckGo Search Error:", err);
+    return "Failed to execute DuckDuckGo search.";
   }
 }
 
@@ -82,19 +101,19 @@ async function sendPrompt() {
   welcomeHeader.classList.add("hidden");
   messagesContainer.classList.remove("hidden");
 
-  // Display User Message
+  // Display User Message in UI
   appendMessage("user", prompt);
   conversationHistory.push({ role: "user", content: prompt });
 
   inputEl.value = "";
   inputEl.style.height = "auto";
 
-  // Initial Thinking State
+  // Initial Thinking Indicator
   const assistantMsgId = appendMessage("assistant", "Thinking...");
 
   try {
-    // First Call to LM Studio
-    let response = await fetch("https://mate-conceptual-nick-foreign.trycloudflare.com", {
+    // SECURE CALL: Fetching through your backend proxy (/api/chat)
+    let response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -106,31 +125,31 @@ async function sendPrompt() {
       })
     });
 
-    if (!response.ok) throw new Error("Could not connect to LM Studio");
+    if (!response.ok) throw new Error("Proxy connection error");
 
     let data = await response.json();
     let choice = data.choices[0].message;
 
-    // CHECK IF MODEL DECIDED TO CALL SEARCH TOOL
+    // CHECK IF MODEL REQUESTED A DUCKDUCKGO TOOL CALL
     if (choice.tool_calls && choice.tool_calls.length > 0) {
       const toolCall = choice.tool_calls[0];
       const searchArgs = JSON.parse(toolCall.function.arguments);
 
-      updateMessage(assistantMsgId, `🔍 Searching the web for: "${searchArgs.query}"...`);
+      updateMessage(assistantMsgId, `🔍 Searching DuckDuckGo for: "${searchArgs.query}"...`);
 
-      // 1. Run actual search
+      // 1. Run DuckDuckGo Search
       const searchResults = await executeWebSearch(searchArgs.query);
 
-      // 2. Append Tool interactions to history
-      conversationHistory.push(choice); // Push assistant's tool execution request
+      // 2. Append Tool execution results to conversation history
+      conversationHistory.push(choice);
       conversationHistory.push({
         role: "tool",
         tool_call_id: toolCall.id,
         content: JSON.stringify(searchResults)
       });
 
-      // 3. Re-call LM Studio with the search results
-      response = await fetch("http://localhost:1234/v1/chat/completions", {
+      // 3. Re-send updated history to local model via proxy
+      response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -144,7 +163,7 @@ async function sendPrompt() {
       choice = data.choices[0].message;
     }
 
-    // Save final response and update UI
+    // Save final assistant response and update UI
     conversationHistory.push({ role: "assistant", content: choice.content });
     updateMessage(assistantMsgId, choice.content);
 
@@ -152,7 +171,7 @@ async function sendPrompt() {
     console.error(error);
     updateMessage(
       assistantMsgId, 
-      "Error: Unable to complete request.\n\nVerify:\n1. LM Studio Server is running at http://localhost:1234\n2. CORS is enabled under LM Studio Server Settings", 
+      "Error: Unable to reach the backend proxy or local AI server.\n\nEnsure your proxy is deployed and your Cloudflare tunnel is running locally.", 
       true
     );
   }
@@ -164,12 +183,12 @@ function appendMessage(role, text) {
 
   const isUser = role === "user";
   const avatarBg = isUser ? "bg-indigo-600" : "bg-gradient-to-r from-blue-400 to-purple-400";
-  const label = isUser ? "You" : "Gemini";
+  const label = isUser ? "You" : "RunningAI";
 
   const msgHTML = `
     <div id="${msgId}" class="flex gap-4 items-start text-sm">
       <div class="w-7 h-7 rounded-full ${avatarBg} flex-shrink-0 flex items-center justify-center text-xs font-bold text-white shadow">
-        ${isUser ? "U" : "✨"}
+        ${isUser ? "U" : "⚡"}
       </div>
       <div class="flex-1 space-y-1">
         <p class="font-medium text-xs text-zinc-400">${label}</p>
