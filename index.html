@@ -3,79 +3,111 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RunningAI</title>
+  <title>RunningAI Local</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#131314] text-[#e3e3e3] h-full flex flex-col font-sans antialiased">
+<body class="bg-[#131314] text-[#e3e3e3] h-full flex font-sans antialiased overflow-hidden">
 
-  <header class="flex items-center justify-between px-6 py-4 border-b border-[#282a2c]/50">
-    <div class="flex items-center gap-2">
-      <span class="text-xl font-medium tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        RunningAI <span class="text-xs text-zinc-500 font-mono font-normal">Local</span>
-      </span>
+  <aside class="w-64 bg-[#1e1f20] border-r border-[#282a2c]/60 flex flex-col justify-between hidden md:flex flex-shrink-0">
+    <div class="p-4 space-y-4">
+      
+      <button 
+        onclick="createNewChat()" 
+        class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-full bg-[#131314] hover:bg-[#282a2c] text-zinc-300 transition border border-[#282a2c]">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        New chat
+      </button>
+
+      <div class="pt-2">
+        <h3 class="px-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Recent Chats</h3>
+        <div id="chat-list" class="space-y-1 overflow-y-auto max-h-[calc(100vh-180px)]">
+          </div>
+      </div>
+
     </div>
-    <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-full bg-[#1e1f20] text-zinc-400 border border-[#282a2c]">
+
+    <div class="p-4 border-t border-[#282a2c]/60 flex items-center justify-between text-xs text-zinc-500">
+      <span class="inline-flex items-center gap-1.5">
         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
         localhost:1234
       </span>
+      <span class="font-mono">LM Studio</span>
     </div>
-  </header>
+  </aside>
 
-  <main class="flex-1 overflow-y-auto px-4 py-8 max-w-3xl w-full mx-auto flex flex-col justify-between">
-    
-    <div id="chat-container" class="space-y-6 w-full">
-      <div id="welcome-header" class="my-12">
-        <h1 class="text-4xl md:text-5xl font-medium tracking-tight mb-2">
-          <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Hello, User
-          </span>
-        </h1>
-        <p class="text-zinc-500 text-xl font-light">How can I help you today?</p>
+  <div class="flex-1 flex flex-col h-full overflow-hidden">
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-8">
-          <button onclick="useSuggestion('Search for latest news about space exploration')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
-            <p class="text-sm text-zinc-300 group-hover:text-white">Search latest space news</p>
-            <span class="text-xs text-zinc-500 mt-2 block">Web Search</span>
-          </button>
-          <button onclick="useSuggestion('Help me write a Python script for web scraping')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
-            <p class="text-sm text-zinc-300 group-hover:text-white">Help me write a Python script</p>
-            <span class="text-xs text-zinc-500 mt-2 block">Coding</span>
-          </button>
-          <button onclick="useSuggestion('Summarize how neural networks work')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
-            <p class="text-sm text-zinc-300 group-hover:text-white">Explain neural networks</p>
-            <span class="text-xs text-zinc-500 mt-2 block">Learning</span>
-          </button>
+    <header class="flex items-center justify-between px-6 py-4 border-b border-[#282a2c]/50 bg-[#131314]">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-zinc-400 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+        <span class="text-xl font-medium tracking-tight bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          RunningAI <span class="text-xs text-zinc-500 font-mono font-normal">Local</span>
+        </span>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto px-4 py-8 max-w-3xl w-full mx-auto flex flex-col justify-between">
+      
+      <div id="chat-container" class="space-y-6 w-full">
+        <div id="welcome-header" class="my-12">
+          <h1 class="text-4xl md:text-5xl font-medium tracking-tight mb-2">
+            <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Hello, User
+            </span>
+          </h1>
+          <p class="text-zinc-500 text-xl font-light">How can I help you today?</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-8">
+            <button onclick="useSuggestion('Search for latest news about space exploration')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
+              <p class="text-sm text-zinc-300 group-hover:text-white">Search latest space news</p>
+              <span class="text-xs text-zinc-500 mt-2 block">Web Search</span>
+            </button>
+            <button onclick="useSuggestion('Help me write a Python script for web scraping')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
+              <p class="text-sm text-zinc-300 group-hover:text-white">Help me write a Python script</p>
+              <span class="text-xs text-zinc-500 mt-2 block">Coding</span>
+            </button>
+            <button onclick="useSuggestion('Summarize how neural networks work')" class="p-4 rounded-2xl bg-[#1e1f20] hover:bg-[#282a2c] text-left transition border border-[#282a2c]/50 group">
+              <p class="text-sm text-zinc-300 group-hover:text-white">Explain neural networks</p>
+              <span class="text-xs text-zinc-500 mt-2 block">Learning</span>
+            </button>
+          </div>
         </div>
+
+        <div id="messages" class="space-y-6 hidden pb-12"></div>
       </div>
 
-      <div id="messages" class="space-y-6 hidden"></div>
-    </div>
+      <div class="sticky bottom-0 pt-4 pb-6 bg-[#131314]">
+        <div class="relative bg-[#1e1f20] rounded-3xl border border-[#282a2c] focus-within:border-zinc-500 transition shadow-lg">
+          <textarea 
+            id="userInput" 
+            rows="1" 
+            placeholder="Ask RunningAI..." 
+            class="w-full bg-transparent text-slate-100 placeholder-zinc-500 px-6 pt-4 pb-12 focus:outline-none resize-none max-h-48 font-normal"
+            onkeydown="handleKeyDown(event)"
+            oninput="autoResize(this)"></textarea>
 
-    <div class="sticky bottom-0 pt-4 pb-6 bg-[#131314]">
-      <div class="relative bg-[#1e1f20] rounded-3xl border border-[#282a2c] focus-within:border-zinc-500 transition shadow-lg">
-        <textarea 
-          id="userInput" 
-          rows="1" 
-          placeholder="Ask RunningAI..." 
-          class="w-full bg-transparent text-slate-100 placeholder-zinc-500 px-6 pt-4 pb-12 focus:outline-none resize-none max-h-48 font-normal"
-          onkeydown="handleKeyDown(event)"
-          oninput="autoResize(this)"></textarea>
-
-        <div class="absolute bottom-3 right-3 flex items-center gap-2">
-          <button 
-            onclick="sendPrompt()" 
-            class="p-2.5 rounded-full bg-white text-black hover:bg-zinc-200 transition active:scale-95 flex items-center justify-center">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
-            </svg>
-          </button>
+          <div class="absolute bottom-3 right-3 flex items-center gap-2">
+            <button 
+              onclick="sendPrompt()" 
+              class="p-2.5 rounded-full bg-white text-black hover:bg-zinc-200 transition active:scale-95 flex items-center justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+              </svg>
+            </button>
+          </div>
         </div>
+        <p class="text-center text-xs text-zinc-600 mt-2">RunningAI Local may display inaccurate info, so double-check responses.</p>
       </div>
-      <p class="text-center text-xs text-zinc-600 mt-2">RunningAI may display inaccurate info, so double-check responses.</p>
-    </div>
 
-  </main>
+    </main>
+
+  </div>
 
   <script src="script.js"></script>
 </body>
