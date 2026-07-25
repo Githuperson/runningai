@@ -94,7 +94,7 @@ async function sendPrompt() {
 
   try {
     // First Call to LM Studio
-    let response = await fetch("http://localhost:1234/v1/chat/completions", {
+    let response = await fetch("https://mate-conceptual-nick-foreign.trycloudflare.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
