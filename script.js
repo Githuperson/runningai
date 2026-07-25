@@ -113,7 +113,7 @@ async function sendPrompt() {
 
   try {
     // SECURE CALL: Fetching through your backend proxy (/api/chat)
-    let response = await fetch("/api/chat", {
+    let response = await fetch("https://mate-conceptual-nick-foreign.trycloudflare.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -149,7 +149,7 @@ async function sendPrompt() {
       });
 
       // 3. Re-send updated history to local model via proxy
-      response = await fetch("/api/chat", {
+      response = await fetch("https://mate-conceptual-nick-foreign.trycloudflare.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
